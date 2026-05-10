@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Material fuente privado (NO subir a repo público)
+*.docx
+*.pdf
+*.zip
+*.txt
+Derecha_chat.txt
+consenso-social-rwing.md.txt
+
+# Editores / IDE
+.vscode/
+.idea/
+*.swp
+
+# Dependencias / build
+node_modules/
+dist/
+.env
+.env.local
