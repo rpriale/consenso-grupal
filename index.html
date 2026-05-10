@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0e1116" />
+  <title>De la Conversación a la Coordinación</title>
+  <meta name="description" content="Un ejercicio breve para identificar prioridades compartidas y habilitar la acción colectiva." />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='52'>🤝</text></svg>" />
+
+  <style>
+    /* ---------- Tokens ---------- */
+    :root {
+      --bg: #fafafa;
+      --bg-elev: #ffffff;
+      --text: #111418;
+      --text-muted: #5a6470;
+      --border: #e3e6ea;
+      --accent: #1a4fb8;
+      --accent-fg: #ffffff;
+      --danger: #b8281a;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
+    :root[data-theme="dark"] {
+      --bg: #0e1116;
+      --bg-elev: #161b22;
+      --text: #e6e8eb;
+      --text-muted: #9aa3ad;
+      --border: #2a313a;
+      --accent: #7aa2f7;
+      --accent-fg: #0e1116;
+      --danger: #f78a76;
+      --shadow: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
+    }
+
+    /* ---------- Base ---------- */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100dvh;
+      transition: background 0.25s ease, color 0.25s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { line-height: 1.2; margin: 0 0 0.5em; font-weight: 650; letter-spacing: -0.01em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    /* ---------- Layout ---------- */
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      padding-top: max(24px, env(safe-area-inset-top));
+    }
+
+    .progress {
+      position: sticky; top: 0; left: 0; right: 0;
+      height: 4px; background: transparent;
+      margin: -24px -20px 24px;
+      z-index: 10;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    /* ---------- Theme toggle ---------- */
+    .theme-toggle {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      right: 16px;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      display: grid; place-items: center;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      transition: background 0.25s, color 0.25s, transform 0.15s;
+    }
+    .theme-toggle:hover { transform: scale(1.05); }
+    .theme-toggle:active { transform: scale(0.95); }
+    .theme-toggle svg { width: 20px; height: 20px; }
+    .theme-toggle .icon-sun  { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+    :root[data-theme="dark"] .theme-toggle .icon-sun  { display: block; }
+    :root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+    /* ---------- Screens ---------- */
+    .screen { display: none; animation: fade .25s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    h1.title { font-size: clamp(28px, 6vw, 38px); margin-top: 8px; }
+    .subtitle { color: var(--text-muted); font-size: 17px; margin-bottom: 24px; }
+    .question { font-size: 20px; font-weight: 600; margin: 8px 0 6px; }
+    .hint { color: var(--text-muted); font-size: 14px; margin-bottom: 18px; }
+
+    .quote {
+      border-left: 3px solid var(--accent);
+      padding: 12px 16px;
+      background: var(--bg-elev);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-style: italic;
+      margin: 20px 0;
+      box-shadow: var(--shadow);
+    }
+    .context-list { padding-left: 20px; margin: 8px 0 24px; color: var(--text-muted); }
+    .context-list li { margin: 6px 0; }
+    .counter {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      margin: 20px 0 24px;
+      font-size: 15px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .counter strong { color: var(--text); font-size: 22px; display: block; margin-top: 2px; }
+
+    /* ---------- Options (radio/checkbox cards) ---------- */
+    .options { display: grid; gap: 10px; margin-bottom: 8px; }
+    .option {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-elev);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.05s;
+      min-height: 44px;
+      user-select: none;
+    }
+    .option:hover { border-color: var(--accent); }
+    .option:active { transform: scale(0.99); }
+    .option input { margin-top: 3px; accent-color: var(--accent); width: 18px; height: 18px; flex-shrink: 0; }
+    .option-text { flex: 1; }
+    .option.checked {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 8%, var(--bg-elev));
+    }
+    .option.disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .other-input {
+      width: 100%;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+    }
+    .other-input:focus { outline: none; border-color: var(--accent); }
+
+    /* ---------- Buttons ---------- */
+    .actions { display: flex; gap: 10px; justify-content: space-between; margin-top: 24px; }
+    button {
+      font: inherit; font-weight: 600;
+      padding: 14px 22px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      min-height: 48px;
+      transition: opacity 0.15s, transform 0.05s, background 0.15s;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-fg);
+      flex: 1;
+    }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-cta {
+      width: 100%;
+      font-size: 17px;
+      padding: 16px 22px;
+      margin-top: 12px;
+    }
+
+    /* ---------- Results ---------- */
+    .result-block { margin: 20px 0; }
+    .result-block h3 { font-size: 15px; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .bar-track {
+      grid-column: 1 / -1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+    .bar-label { color: var(--text); }
+    .bar-pct { color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+    .error {
+      color: var(--danger);
+      background: color-mix(in srgb, var(--danger) 10%, var(--bg-elev));
+      border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      margin: 12px 0;
+      font-size: 14px;
+    }
+
+    .footer-note {
+      margin-top: 32px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toggle día/noche -->
+  <button id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema">
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+  </button>
+
+  <main>
+    <div class="progress" aria-hidden="true"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <!-- Pantalla 0: Landing -->
+    <section class="screen active" id="screen-landing">
+      <h1 class="title">De la Conversación a la Coordinación</h1>
+      <p class="subtitle">Un ejercicio breve para identificar prioridades compartidas y habilitar la acción colectiva.</p>
+
+      <ul class="context-list">
+        <li>Este grupo reúne a líderes de empresa, política y sociedad civil.</li>
+        <li>Hay alta alineación en diagnóstico y valores.</li>
+        <li>La pieza que falta es la coordinación estructurada.</li>
+        <li>Esta encuesta busca identificar prioridades comunes, el rol deseado del grupo y el nivel de compromiso.</li>
+      </ul>
+
+      <blockquote class="quote">
+        Este grupo tiene alta alineación en valores, pero le falta un mecanismo de coordinación. Esta herramienta busca identificar prioridades compartidas y habilitar la acción colectiva.
+      </blockquote>
+
+      <div class="counter">
+        Participantes hasta ahora
+        <strong id="counter-value">—</strong>
+      </div>
+
+      <button class="btn-primary btn-cta" id="btn-start">Comenzar encuesta →</button>
+      <p class="footer-note">Anónimo · sin login · ~30 segundos</p>
+    </section>
+
+    <!-- Pantalla 1: Prioridades -->
+    <section class="screen" id="screen-1" data-step="1">
+      <p class="question">Selecciona <strong>solo 3</strong> áreas en las que este grupo debería enfocarse en los próximos 6 meses</p>
+      <p class="hint">Máximo 3 selecciones. <span id="picked-count">0</span>/3 elegidas.</p>
+
+      <div class="options" id="opts-priorities" role="group">
+        <!-- generadas por JS -->
+      </div>
+
+      <input type="text" class="other-input" id="other-priority" placeholder="Especifica 'Otro'..." style="display:none" maxlength="120" />
+
+      <div class="actions">
+        <button class="btn-secondary" data-back>← Atrás</button>
+        <button class="btn-primary" data-next disabled>Siguiente →</button>
+      </div>
+    </section>
+
+    <!-- Pantalla 2: Rol del grupo -->
+    <section class="screen" id="screen-2" data-step="2">
+      <p class="question">¿Qué rol debería cumplir este grupo principalmente?</p>
+      <div class="options" id="opts-role" role="radiogroup"></div>
+      <div class="actions">
+        <button class="btn-secondary" data-back>← Atrás</button>
+        <button class="btn-primary" data-next disabled>Siguiente →</button>
+      </div>
+    </section>
+
+    <!-- Pantalla 3: Compromiso -->
+    <section class="screen" id="screen-3" data-step="3">
+      <p class="question">¿Cómo te gustaría participar?</p>
+      <div class="options" id="opts-engagement" role="radiogroup"></div>
+      <div class="actions">
+        <button class="btn-secondary" data-back>← Atrás</button>
+        <button class="btn-primary" data-next disabled>Siguiente →</button>
+      </div>
+    </section>
+
+    <!-- Pantalla 4: Horizonte -->
+    <section class="screen" id="screen-4" data-step="4">
+      <p class="question">¿Cuál debería ser el horizonte para el primer objetivo colectivo?</p>
+      <div class="options" id="opts-horizon" role="radiogroup"></div>
+      <div class="actions">
+        <button class="btn-secondary" data-back>← Atrás</button>
+        <button class="btn-primary" data-next disabled>Siguiente →</button>
+      </div>
+    </section>
+
+    <!-- Pantalla 5: Norma -->
+    <section class="screen" id="screen-5" data-step="5">
+      <p class="question">¿Cuál es la regla más importante para este grupo?</p>
+      <div class="options" id="opts-norm" role="radiogroup"></div>
+      <div id="submit-error" class="error" style="display:none"></div>
+      <div class="actions">
+        <button class="btn-secondary" data-back>← Atrás</button>
+        <button class="btn-primary" id="btn-submit" disabled>Enviar respuestas</button>
+      </div>
+    </section>
+
+    <!-- Pantalla 6: Gracias + resultados -->
+    <section class="screen" id="screen-thanks">
+      <h1 class="title">Gracias.</h1>
+      <p class="subtitle">Tu aporte contribuye a definir prioridades compartidas.</p>
+
+      <div class="counter">
+        Participantes hasta ahora
+        <strong id="final-counter">—</strong>
+      </div>
+
+      <div id="results-container"></div>
+
+      <button class="btn-primary btn-cta" id="btn-share">Compartir por WhatsApp</button>
+      <p class="footer-note">No se almacenan datos personales. Las respuestas son anónimas.</p>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // =========================================================
+    // CONFIGURACIÓN: pegar aquí las credenciales del proyecto Supabase
+    // (Settings → API en supabase.com)
+    // =========================================================
+    const SUPABASE_URL      = 'https://shttdhhilluurwhddhrm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNodHRkaGhpbGx1dXJ3aGRkaHJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzOTA2NzcsImV4cCI6MjA5Mzk2NjY3N30.dHWmZh5myHrqLln6xeMb1_iJZs55X099S4YMhbJOA7s';
+    // =========================================================
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ---------- Tema día/noche ----------
+    const root = document.documentElement;
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark' || stored === 'light') {
+      root.setAttribute('data-theme', stored);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      root.setAttribute('data-theme', 'dark');
+    }
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+
+    // ---------- Datos del cuestionario ----------
+    const PRIORITIES = [
+      'Reforma del sistema político (gobernabilidad, partidos)',
+      'Seguridad / crimen organizado',
+      'Educación / capital humano',
+      'Salud (incluyendo anemia)',
+      'Clima / riesgos ambientales',
+      'Reactivación económica',
+      'Estabilidad institucional / estado de derecho',
+      'Otro'
+    ];
+    const ROLES = [
+      'Think tank (ideas y análisis)',
+      'Do tank (ejecución de iniciativas)',
+      'Red de coordinación (conectar esfuerzos existentes)',
+      'Influencia pública (política / opinión)',
+      'Comunidad (discusión e intercambio)'
+    ];
+    const ENGAGEMENT = [
+      'Solo informarme',
+      'Aportar ideas ocasionalmente',
+      'Apoyar iniciativas específicas',
+      'Liderar o co-liderar iniciativas'
+    ];
+    const HORIZON = ['30 días', '90 días', '6 meses', '1 año'];
+    const NORMS = [
+      'Libertad total de expresión',
+      'Tono respetuoso siempre',
+      'Moderación activa',
+      'Contenido curado / relevante'
+    ];
+
+    // ---------- Estado ----------
+    const state = {
+      priorities: [],
+      other_priority: '',
+      role: null,
+      engagement: null,
+      horizon: null,
+      norm: null
+    };
+    let currentStep = 0; // 0 = landing, 1..5 = bloques, 6 = gracias
+
+    // ---------- Render de opciones ----------
+    function renderSingle(containerId, items, key, screenId) {
+      const c = document.getElementById(containerId);
+      c.innerHTML = '';
+      items.forEach((label, i) => {
+        const id = `${containerId}-${i}`;
+        const wrap = document.createElement('label');
+        wrap.className = 'option';
+        wrap.innerHTML = `
+          <input type="radio" name="${containerId}" id="${id}" value="${escapeAttr(label)}" />
+          <span class="option-text">${escapeHtml(label)}</span>
+        `;
+        wrap.querySelector('input').addEventListener('change', () => {
+          state[key] = label;
+          c.querySelectorAll('.option').forEach(o => o.classList.remove('checked'));
+          wrap.classList.add('checked');
+          updateNextEnabled(screenId);
+        });
+        c.appendChild(wrap);
+      });
+    }
+
+    function renderPriorities() {
+      const c = document.getElementById('opts-priorities');
+      const otherInput = document.getElementById('other-priority');
+      c.innerHTML = '';
+      PRIORITIES.forEach((label, i) => {
+        const id = `prio-${i}`;
+        const wrap = document.createElement('label');
+        wrap.className = 'option';
+        wrap.innerHTML = `
+          <input type="checkbox" id="${id}" value="${escapeAttr(label)}" />
+          <span class="option-text">${escapeHtml(label)}</span>
+        `;
+        const input = wrap.querySelector('input');
+        input.addEventListener('change', () => {
+          if (input.checked) {
+            if (state.priorities.length >= 3) {
+              input.checked = false; // bloquear cuarta
+              flashLimit();
+              return;
+            }
+            state.priorities.push(label);
+            wrap.classList.add('checked');
+          } else {
+            state.priorities = state.priorities.filter(p => p !== label);
+            wrap.classList.remove('checked');
+          }
+          // Mostrar input "Otro" si está seleccionado
+          otherInput.style.display = state.priorities.includes('Otro') ? 'block' : 'none';
+          if (!state.priorities.includes('Otro')) {
+            otherInput.value = '';
+            state.other_priority = '';
+          }
+          // Actualizar contador y deshabilitar/habilitar restantes
+          document.getElementById('picked-count').textContent = state.priorities.length;
+          c.querySelectorAll('.option').forEach(opt => {
+            const inp = opt.querySelector('input');
+            if (!inp.checked && state.priorities.length >= 3) opt.classList.add('disabled');
+            else opt.classList.remove('disabled');
+          });
+          updateNextEnabled('screen-1');
+        });
+        c.appendChild(wrap);
+      });
+      otherInput.addEventListener('input', e => { state.other_priority = e.target.value.trim(); });
+    }
+
+    let flashTimer;
+    function flashLimit() {
+      const hint = document.querySelector('#screen-1 .hint');
+      hint.style.color = 'var(--danger)';
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => { hint.style.color = ''; }, 800);
+    }
+
+    // ---------- Validación de avance ----------
+    function updateNextEnabled(screenId) {
+      const screen = document.getElementById(screenId);
+      const next = screen.querySelector('[data-next], #btn-submit');
+      if (!next) return;
+      let ok = false;
+      if (screenId === 'screen-1') ok = state.priorities.length >= 1;
+      else if (screenId === 'screen-2') ok = !!state.role;
+      else if (screenId === 'screen-3') ok = !!state.engagement;
+      else if (screenId === 'screen-4') ok = !!state.horizon;
+      else if (screenId === 'screen-5') ok = !!state.norm;
+      next.disabled = !ok;
+    }
+
+    // ---------- Navegación ----------
+    function goTo(step) {
+      currentStep = step;
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const map = {
+        0: 'screen-landing',
+        1: 'screen-1', 2: 'screen-2', 3: 'screen-3', 4: 'screen-4', 5: 'screen-5',
+        6: 'screen-thanks'
+      };
+      document.getElementById(map[step]).classList.add('active');
+      // barra de progreso
+      const pct = step >= 1 && step <= 5 ? (step / 5) * 100 : 0;
+      document.getElementById('progress-bar').style.width = pct + '%';
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    document.getElementById('btn-start').addEventListener('click', () => goTo(1));
+    document.querySelectorAll('[data-next]').forEach(b => {
+      b.addEventListener('click', () => goTo(currentStep + 1));
+    });
+    document.querySelectorAll('[data-back]').forEach(b => {
+      b.addEventListener('click', () => goTo(Math.max(0, currentStep - 1)));
+    });
+
+    // ---------- Submit ----------
+    document.getElementById('btn-submit').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-submit');
+      const errBox = document.getElementById('submit-error');
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+      errBox.style.display = 'none';
+
+      const payload = {
+        priorities: state.priorities,
+        other_priority: state.other_priority || null,
+        role: state.role,
+        engagement: state.engagement,
+        horizon: state.horizon,
+        norm: state.norm
+      };
+
+      const { error } = await supabase.from('responses').insert(payload);
+      if (error) {
+        console.error(error);
+        errBox.textContent = 'No se pudo enviar. Verifica tu conexión e intenta de nuevo.';
+        errBox.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Reintentar envío';
+        return;
+      }
+
+      localStorage.setItem('submitted', '1');
+      await renderResults();
+      goTo(6);
+    });
+
+    // ---------- Resultados ----------
+    async function loadStats() {
+      const { data, error } = await supabase.rpc('get_stats');
+      if (error) { console.warn(error); return null; }
+      return data;
+    }
+
+    async function refreshCounter() {
+      const stats = await loadStats();
+      if (stats && typeof stats.count === 'number') {
+        document.getElementById('counter-value').textContent = stats.count.toLocaleString('es');
+      }
+    }
+
+    async function renderResults() {
+      const stats = await loadStats();
+      const container = document.getElementById('results-container');
+      if (!stats) {
+        container.innerHTML = '<p class="hint">No se pudieron cargar los resultados agregados.</p>';
+        return;
+      }
+      document.getElementById('final-counter').textContent = (stats.count || 0).toLocaleString('es');
+
+      const blocks = [
+        { title: 'Prioridades más votadas', data: stats.priorities, total: stats.count },
+        { title: 'Rol del grupo',           data: stats.role,       total: stats.count },
+        { title: 'Compromiso personal',     data: stats.engagement, total: stats.count },
+        { title: 'Horizonte temporal',      data: stats.horizon,    total: stats.count },
+        { title: 'Norma de comunicación',   data: stats.norm,       total: stats.count },
+      ];
+
+      container.innerHTML = blocks.map(b => renderBlock(b)).join('');
+    }
+
+    function renderBlock({ title, data, total }) {
+      if (!data || !total) return '';
+      const entries = Object.entries(data).sort((a,b) => b[1] - a[1]);
+      const max = Math.max(...entries.map(e => e[1]));
+      const rows = entries.map(([label, count]) => {
+        const pct = Math.round((count / total) * 100);
+        const w   = Math.round((count / max) * 100);
+        return `
+          <div class="bar-row">
+            <span class="bar-label">${escapeHtml(label)}</span>
+            <span class="bar-pct">${pct}%</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div>
+          </div>`;
+      }).join('');
+      return `<div class="result-block"><h3>${escapeHtml(title)}</h3>${rows}</div>`;
+    }
+
+    document.getElementById('btn-share').addEventListener('click', () => {
+      const url  = window.location.href.split('#')[0];
+      const text = `De la Conversación a la Coordinación — encuesta breve y anónima del grupo: ${url}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    });
+
+    // ---------- Helpers ----------
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    // ---------- Init ----------
+    renderPriorities();
+    renderSingle('opts-role',       ROLES,      'role',       'screen-2');
+    renderSingle('opts-engagement', ENGAGEMENT, 'engagement', 'screen-3');
+    renderSingle('opts-horizon',    HORIZON,    'horizon',    'screen-4');
+    renderSingle('opts-norm',       NORMS,      'norm',       'screen-5');
+
+    // Si ya envió, ir directo a resultados
+    if (localStorage.getItem('submitted') === '1') {
+      renderResults().then(() => goTo(6));
+    } else {
+      refreshCounter();
+    }
+  </script>
+</body>
+</html>
