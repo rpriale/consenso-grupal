@@ -643,8 +643,14 @@
     renderSingle('opts-horizon',    HORIZON,    'horizon',    'screen-4');
     renderSingle('opts-norm',       NORMS,      'norm',       'screen-5');
 
+        // Reset admin: ?reset en la URL borra el flag y limpia el query string
+    if (new URLSearchParams(window.location.search).has('reset')) {
+      localStorage.removeItem('submitted');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     // Si ya envió, ir directo a resultados
-    if (localStorage.getItem('submitted') === '1') {
+        if (localStorage.getItem('submitted') === '1') {
       renderResults().then(() => goTo(6));
     } else {
       refreshCounter();
